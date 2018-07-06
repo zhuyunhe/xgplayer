@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,minimal-ui">
@@ -9,6 +10,7 @@
     <title>西瓜播放器-MP4视频</title>
     <link rel="stylesheet" href="../layout.css">
 </head>
+
 <body>
     <section id="wrapper">
         <div id="vs"></div>
@@ -16,10 +18,17 @@
     <script src="../../packages/xgplayer/browser/index.js" charset="utf-8"></script>
     <script src="../../packages/xgplayer-mp4/browser/index.js" charset="utf-8"></script>
     <script type="text/javascript">
-        var player=new Player({
-            id:'vs',
-            url:'./xgplayer-demo.mp4',
-            poster:'./poster.png',
+        var player = new Player({
+            id: 'vs',
+            url: [{
+                src: './xgplayer-demo.mp4',
+                type: "video/mp4"
+            }, {
+                src: './xgplayer-demo-640*360.mp4',
+                type: 'video/mp4'
+            }],
+            poster: './poster.png',
+            preloadTime: 5,
             thumbnail: {
                 pic_num: 44,
                 width: 160,
@@ -34,6 +43,15 @@
                 method: 'get',
             },
         })
+        player.emit('resourceReady', [{
+            name: '高清',
+            url: './xgplayer-demo-640*360.mp4',
+            cname: '高清'
+        }, {
+            name: '超清',
+            url: './xgplayer-demo.mp4',
+            cname: '超清'
+        }]);
     </script>
 
 

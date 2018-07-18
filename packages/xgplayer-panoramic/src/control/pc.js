@@ -74,10 +74,6 @@ let pc = function () {
   player.video.addEventListener('click', function (e) {
     e.preventDefault()
     e.stopPropagation()
-    if (document.activeElement !== player.video) {
-      player.video.focus()
-      return
-    }
     clk++
     if (_click_) {
       clearTimeout(_click_)
@@ -103,10 +99,6 @@ let pc = function () {
   player.video.addEventListener('dblclick', function (e) {
     e.preventDefault()
     e.stopPropagation()
-    if (document.activeElement !== player.video) {
-      player.video.focus()
-      return
-    }
     let fullscreen = controls.querySelector('.xgplayer-fullscreen')
     if (fullscreen) {
       let clk

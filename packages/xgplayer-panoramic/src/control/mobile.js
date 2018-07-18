@@ -68,48 +68,48 @@ let mobile = function () {
   })
   enter.querySelector('.xgplayer-enter-tips').style.display = 'block'
   player.start()
-  if (pass) {
-    enterLogo.src = util.getBgImage(logo)
-    player.video.addEventListener('touchstart', (e) => {
-      e.preventDefault()
-      player.emit('focus')
-    }, false)
-    btn.addEventListener('touchstart', (e) => {
-      e.preventDefault()
-      if (util.hasClass(root, 'xgplayer-nostart')) {
-        util.removeClass(root, 'xgplayer-nostart')
-        util.addClass(root, 'xgplayer-is-enter')
-        player.on('canplay', () => {
-          util.removeClass(root, 'xgplayer-is-enter')
-        })
-        player.once('playing', () => {
-          util.removeClass(root, 'xgplayer-is-enter')
-        })
+  // if (pass) {
+  enterLogo.src = util.getBgImage(logo)
+  player.panoramic.addEventListener('touchstart', (e) => {
+    // e.preventDefault()
+    player.emit('focus')
+  }, false)
+  btn.addEventListener('touchstart', (e) => {
+    e.preventDefault()
+    if (util.hasClass(root, 'xgplayer-nostart')) {
+      util.removeClass(root, 'xgplayer-nostart')
+      util.addClass(root, 'xgplayer-is-enter')
+      player.on('canplay', () => {
+        util.removeClass(root, 'xgplayer-is-enter')
+      })
+      player.once('playing', () => {
+        util.removeClass(root, 'xgplayer-is-enter')
+      })
+      player.play()
+    } else {
+      if (player.paused) {
         player.play()
       } else {
-        if (player.paused) {
-          player.play()
-        } else {
-          player.pause()
-        }
+        player.pause()
       }
-    })
-    player.on('play', () => {
-      svg.reset(iconPath.play, iconPath.pause)
-    })
-    player.on('pause', () => {
-      svg.reset(iconPath.pause, iconPath.play)
-    })
-  } else {
-    util.addClass(root, 'xgplayer-mobile-npassed')
-    player.once('ready', function () {
-      player.video.controls = player.config.controls
-      player.video.controlsList = player.config.controlsList.join(' ')
-      if (player.config.poster) {
-        player.video.poster = player.config.poster
-      }
-    })
-  }
+    }
+  })
+  player.on('play', () => {
+    svg.reset(iconPath.play, iconPath.pause)
+  })
+  player.on('pause', () => {
+    svg.reset(iconPath.pause, iconPath.play)
+  })
+  // } else {
+  //   util.addClass(root, 'xgplayer-mobile-npassed')
+  //   player.once('ready', function () {
+  //     player.video.controls = player.config.controls
+  //     player.video.controlsList = player.config.controlsList.join(' ')
+  //     if (player.config.poster) {
+  //       player.video.poster = player.config.poster
+  //     }
+  //   })
+  // }
   if (player.config.debug) {
     debug(player.config.debug)
   }

@@ -1,7 +1,6 @@
 import EventEmitter from 'event-emitter'
 import util from './utils/util'
 import Errors from './error'
-import Panoramic from './panoramic'
 class Proxy {
   constructor (options) {
     this._hasStart = false
@@ -21,7 +20,7 @@ class Proxy {
       videoConfig.loop = 'loop'
     }
     this.video = util.createDom('video', '', videoConfig, '')
-    this.panoramic = new Panoramic()
+
     this.ev = ['play', 'playing', 'pause', 'ended', 'error', 'seeking', 'seeked',
       'timeupdate', 'waiting', 'canplay', 'canplaythrough', 'durationchange', 'volumechange', 'loadeddata'].map((item) => {
       return {
@@ -67,7 +66,7 @@ class Proxy {
     this.video.play()
   }
   pause () {
-    this.panoramic.stop()
+    // this.panoramic.stop()
     this.video.pause()
   }
   canPlayType () {
@@ -232,6 +231,9 @@ class Proxy {
   }
   set volume (vol) {
     this.video.volume = vol
+  }
+  cameraMove (options) {
+    this.panoramic.cameraMove(options)
   }
 }
 

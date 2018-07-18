@@ -1,5 +1,5 @@
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
 const polyfill = []
-
 const umd = {
   entry: polyfill.concat(['./src/index.js']),
   output: {
@@ -32,7 +32,10 @@ const umd = {
   },
   optimization: {
     minimize: true
-  }
+  },
+  plugins: [
+    new BundleAnalyzerPlugin()
+  ]
 }
 
 const client = {

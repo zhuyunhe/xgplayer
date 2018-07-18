@@ -739,3 +739,9 @@
         }
     }
 }
+.xgplayer-panoramic {
+    cursor: grab;
+    &.grabbing{
+        cursor: grabbing;
+    }
+}

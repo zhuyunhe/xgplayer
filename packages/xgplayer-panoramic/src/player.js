@@ -3,6 +3,7 @@ import util from './utils/util'
 import sniffer from './utils/sniffer'
 import Errors from './error'
 import {version} from '../package.json'
+import Panoramic from './panoramic'
 
 class Player extends Proxy {
   constructor (options) {
@@ -25,6 +26,11 @@ class Player extends Proxy {
     this.history = []
     this.root = util.findDom(document, `#${this.config.id}`)
     this.controls = util.createDom('xg-controls', '', {unselectable: 'on', onselectstart: 'return false'}, 'xgplayer-controls')
+    this.panoramic = new Panoramic({
+      height: this.config.height,
+      width: this.config.width,
+      radius: this.config.radius || 500
+    }, this)
     if (!this.root) {
       let el = this.config.el
       if (el && el.nodeType === 1) {
@@ -85,7 +91,6 @@ class Player extends Proxy {
         this.video.appendChild(util.createDom('source', '', {src: `${item.src}`, type: `${item.type || ''}`}))
       })
     }
-    // root.insertBefore(this.panoramic.init(this.video), root.firstChild)
     root.insertBefore(this.panoramic.init(this.video), root.firstChild)
     this.panoramic.start()
     player.userTimer = setTimeout(function () {
@@ -151,7 +156,7 @@ class Player extends Proxy {
   }
 
   onPause () {
-    this.panoramic.stop()
+    // this.panoramic.stop()
     util.addClass(this.root, 'xgplayer-pause')
     if (this.userTimer) {
       clearTimeout(this.userTimer)

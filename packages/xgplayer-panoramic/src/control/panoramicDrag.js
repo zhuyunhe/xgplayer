@@ -8,12 +8,21 @@ import bezier from '../utils/bezier'
  * touchEnd animation
  */
 const endEasing = bezier(0.72, 0.03, 0.94, 0.02)
+
+/**
+ * PC/Mobile event name arr
+ * @type {{start: string[], move: string[], end: string[]}}
+ */
 const ev = {
   start: ['touchstart', 'mousedown'],
   move: ['touchmove', 'mousemove'],
   end: ['touchend', 'mouseup']
 }
-const temp = {
+
+/**
+ * collect dragging data for animation analyze
+ */
+let temp = {
   isActive: false,
   startTime: 0,
   startPosX: 0,
@@ -29,6 +38,9 @@ const temp = {
   speedHor: 0
 }
 
+/**
+ * main code
+ */
 const plugin = function () {
   const player = this
   const { panoramic, config } = player
@@ -38,6 +50,11 @@ const plugin = function () {
     return percent * sensitivity * 1.5 * 90
   }
 
+  /**
+   * mousemove event
+   * @param e
+   * @returns {{x: number, y: number}}
+   */
   const handleMouseMove = (e) => {
     const domRect = panoramic.dom.getBoundingClientRect()
     let currentX
@@ -55,6 +72,12 @@ const plugin = function () {
       y: currentY
     }
   }
+
+  /**
+   * one finger touchmove event
+   * @param e
+   * @returns {{x: number, y: number}}
+   */
   const handleSingleTouchMove = (e) => {
     const domRect = panoramic.dom.getBoundingClientRect()
     const { clientX, clientY } = e.touches[0]
@@ -63,11 +86,19 @@ const plugin = function () {
       y: clientY - domRect.top
     }
   }
+
+  /**
+   * move listener
+   * judge which position calculator to be called
+   * @param e
+   */
   const handleMove = (e) => {
     e.stopPropagation()
     e.preventDefault()
     if (!temp.isActive) return
-    const domRect = panoramic.dom.getBoundingClientRect()
+    const now = Date.now()
+    const { width: canvasWidth, height: canvasHeight } = panoramic.dom.getBoundingClientRect()
+    const { lastMoveTime, lastHorAngle, lastVerAngle } = temp
     let currentPos = {
       x: null,
       y: null
@@ -75,6 +106,8 @@ const plugin = function () {
     if (e instanceof window.TouchEvent && e.touches) {
       if (e.touches.length === 1) {
         currentPos = handleSingleTouchMove(e)
+      } else {
+        return
       }
     } else {
       currentPos = handleMouseMove(e)
@@ -82,21 +115,32 @@ const plugin = function () {
 
     const deltaX = currentPos.x - temp.lastPosX
     const deltaY = currentPos.y - temp.lastPosY
-    const deltaDegX = getDeltaDeg(deltaX / domRect.width)
-    const deltaDegY = getDeltaDeg(deltaY / domRect.height)
+    const deltaDegX = getDeltaDeg(deltaX / canvasWidth)
+    const deltaDegY = getDeltaDeg(deltaY / canvasHeight)
+
+    // do camera rotate, the effect will show in next AnimationFrame
     panoramic.cameraMove({
       verAngle: deltaDegY,
       horAngle: -1 * deltaDegX
     })
-    temp.speedHor = (panoramic.angle.hor - temp.lastHorAngle) / (Date.now() - temp.lastMoveTime)
-    temp.speedVer = (panoramic.angle.ver - temp.lastVerAngle) / (Date.now() - temp.lastMoveTime)
-    temp.lastPosX = currentPos.x
-    temp.lastPosY = currentPos.y
-    temp.lastHorAngle = panoramic.angle.hor
-    temp.lastVerAngle = panoramic.angle.ver
-    temp.lastMoveTime = Date.now()
+
+    // save result for next event to calculate
+    const {hor: currentHorAngle, ver: currentVerAngle} = panoramic.angle
+    temp = Object.assign({}, temp, {
+      speedHor: (currentHorAngle - lastHorAngle) / (now - lastMoveTime),
+      speedVer: (currentVerAngle - lastVerAngle) / (now - lastMoveTime),
+      lastPosX: currentPos.x,
+      lastPosY: currentPos.y,
+      lastHorAngle: currentHorAngle,
+      lastVerAngle: currentVerAngle,
+      lastMoveTime: now
+    })
   }
 
+  /**
+   * mouse start handler
+   * @param e
+   */
   const mouseStart = (e) => {
     if (e.target === panoramic.dom) {
       temp.lastPosX = temp.startPosX = e.offsetX
@@ -108,6 +152,10 @@ const plugin = function () {
     }
   }
 
+  /**
+   * single touch start handler
+   * @param e
+   */
   const singleTouchStart = (e) => {
     const domRect = panoramic.dom.getBoundingClientRect()
     const { clientX, clientY } = e.touches[0]
@@ -115,6 +163,11 @@ const plugin = function () {
     temp.lastPosY = temp.startPosY = clientY - domRect.top
   }
 
+  /**
+   * start listener
+   * judge which position calculator to be called
+   * @param e
+   */
   const handleStart = (e) => {
     e.stopPropagation()
     // e.preventDefault()
@@ -136,6 +189,9 @@ const plugin = function () {
     })
   }
 
+  /**
+   * animation after mouse release
+   */
   const doEndAnimate = () => {
     const sver = temp.speedVer
     const shor = temp.speedHor
@@ -163,17 +219,46 @@ const plugin = function () {
     }
     animate()
   }
+
+  /**
+   * is this mouseup evnet means a click (not a drag)
+   * @returns {boolean}
+   */
+  const isClick = () => {
+    const now = Date.now()
+    const { lastPosX, lastPosY, startPosX, startPosY } = temp
+    const deltaX = Math.abs(lastPosX - startPosX)
+    const deltaY = Math.abs(lastPosY - startPosY)
+
+    const cond1 = deltaX <= 5 && deltaY <= 5 // compare event position with start position
+    const cond2 = now - temp.startTime <= 300 // duration of event should be less than 300ms
+    return cond1 && cond2
+  }
+
+  /**
+   * end listener
+   * @param e
+   */
   const handleEnd = (e) => {
     e.stopPropagation()
     e.preventDefault()
     temp.isActive = false
     panoramic.dom.classList.remove('grabbing')
+
+    if (isClick()) {
+      // trigger player pause/play when event type is click
+      player[player.paused ? 'play' : 'pause']()
+      return
+    }
     doEndAnimate()
     ev.end.forEach(item => {
       document.removeEventListener(item, handleEnd)
     })
   }
 
+  /**
+   * add listeners for dragging
+   */
   ev.start.forEach(item => {
     panoramic.addEventListener(item, handleStart)
   })

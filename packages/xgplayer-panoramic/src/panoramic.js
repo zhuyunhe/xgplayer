@@ -16,7 +16,6 @@ import {
   Math as THREEMath
 } from 'three'
 
-let instance = null
 const getDefaultOpts = () => ({
   fov: 75,
   radius: 500,
@@ -32,12 +31,16 @@ const getDefaultVideoOpts = () => ({
   horAngle: 0
 })
 
+let instance = null
+/**
+ * panoramic core
+ */
 class Panoramic {
   constructor (options, player) {
-    this.player = player
     if (instance !== null) {
       return instance
     }
+    this.player = player
     instance = this
     this._options = Object.assign(getDefaultOpts(), options)
     this._GL = {
@@ -60,21 +63,14 @@ class Panoramic {
     this.dom = null
     this.listeners = []
 
-    this.handleFullScreen = () => {
-      if (!this.state.isFullScreen) {
-        this._GL.renderer.setSize(window.innerWidth, window.innerHeight)
-        this._GL.camera.aspect = window.innerWidth / window.innerHeight
-        this._GL.camera.updateProjectionMatrix()
-      } else {
-        this._GL.renderer.setSize(this._options.width, this._options.height)
-        this._GL.camera.aspect = this._options.width / this._options.height
-        this._GL.camera.updateProjectionMatrix()
-      }
-      this.state.isFullScreen = !this.state.isFullScreen
-    }
-    this.initFullScreenEvents()
+    this._bindEvents()
   }
 
+  /**
+   * init webGL
+   * @param videoEl
+   * @returns {*}
+   */
   init (videoEl) {
     if (this.state.isInited) return
     const {
@@ -118,12 +114,16 @@ class Panoramic {
     this.state.isInited = true
     this.dom = renderer.domElement
     this.dom.classList.add('xgplayer-panoramic')
+    // if there are listeners cached，bind them to canvas DOM
     if (this.listeners.length) {
       this.flushEventListeners()
     }
     return renderer.domElement
   }
 
+  /**
+   * start rendering
+   */
   start () {
     if (this.state.isInited && this._RAF === null) {
       this._doRender()
@@ -131,8 +131,11 @@ class Panoramic {
     this.state.isStopped = false
   }
 
+  /**
+   * move camera for 360-degree experience
+   * @param movements
+   */
   cameraMove (movements) {
-    // if (this.state.isStopped) return
     const {_CAMERA} = this
     if (_CAMERA.verAngle + movements.verAngle >= 90) {
       movements.verAngle = 0
@@ -145,6 +148,9 @@ class Panoramic {
     }
   }
 
+  /**
+   * flush listeners cache
+   */
   flushEventListeners () {
     this.listeners.forEach((args) => {
       this.dom.addEventListener(...args)
@@ -152,6 +158,10 @@ class Panoramic {
     this.listeners.length = 0
   }
 
+  /**
+   * add listener to dom
+   * @param args
+   */
   addEventListener (...args) {
     if (this.state.isInited) {
       this.dom.addEventListener(...args)
@@ -159,20 +169,38 @@ class Panoramic {
       this.listeners.push(args)
     }
   }
+
+  /**
+   * unbind listeners
+   * @param args
+   */
   removeEventListener (...args) {
     this.dom.removeEventListener(...args)
   }
 
+  /**
+   * stop render process
+   */
   stop () {
     this.state.isStopped = true
     window.cancelAnimationFrame(this._RAF)
     this._RAF = null
   }
 
+  /**
+   * get radius coord
+   * @param deg
+   * @returns {*}
+   * @private
+   */
   static _degToRad (deg) {
     return THREEMath.degToRad(deg)
   }
 
+  /**
+   * render a frame
+   * @private
+   */
   _doRender () {
     if (this.isStopped) return
     this._RAF = window.requestAnimationFrame(this._doRender.bind(this))
@@ -192,6 +220,9 @@ class Panoramic {
     renderer.render(scene, camera)
   }
 
+  /**
+   * destroy panoramic
+   */
   destroy () {
     this._GL = null
     this._options = null
@@ -201,28 +232,46 @@ class Panoramic {
     this.listeners = null
     window.cancelAnimationFrame(this._RAF)
     this._RAF = null
-    this.unbindEvents()
+    this._unbindFullScreenEvents()
     instance = null
   }
 
-  unbindEvents () {
+  /**
+   * unbind fullscreen event
+   */
+  _unbindFullScreenEvents () {
     ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(item => {
-      document.removeEventListener(item, this.handleFullScreen)
+      document.removeEventListener(item, this._handleFullScreen)
     })
   }
 
-  initFullScreenEvents () {
+  /**
+   * bind events
+   */
+  _bindEvents () {
+    this._handleFullScreen = () => {
+      if (!this.state.isFullScreen) {
+        this._GL.renderer.setSize(window.innerWidth, window.innerHeight)
+        this._GL.camera.aspect = window.innerWidth / window.innerHeight
+        this._GL.camera.updateProjectionMatrix()
+      } else {
+        this._GL.renderer.setSize(this._options.width, this._options.height)
+        this._GL.camera.aspect = this._options.width / this._options.height
+        this._GL.camera.updateProjectionMatrix()
+      }
+      this.state.isFullScreen = !this.state.isFullScreen
+    }
     ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(item => {
       document.addEventListener(item, this.handleFullScreen)
     })
     this.player.once('destroy', () => {
-      ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(item => {
-        document.removeEventListener(item, this.handleFullScreen)
-        this.destroy()
-      })
+      this.destroy()
     })
   }
 
+  /**
+  * get current camera ver/hor angle
+   */
   get angle () {
     return {
       ver: this._CAMERA.verAngle,

@@ -53,12 +53,14 @@ class Panoramic {
       scene: null
     }
     this._CAMERA = getDefaultVideoOpts()
+    this._CAMERA_NEXT = getDefaultVideoOpts()
     this._RAF = null
 
     this.state = {
       isInited: false,
       isFullScreen: false,
-      isStopped: false
+      isStopped: false,
+      needUpdate: true
     }
     this.dom = null
     this.listeners = []
@@ -136,7 +138,7 @@ class Panoramic {
    * @param movements
    */
   cameraMove (movements) {
-    const {_CAMERA} = this
+    const { _CAMERA } = this
     if (_CAMERA.verAngle + movements.verAngle >= 90) {
       movements.verAngle = 0
     }
@@ -146,6 +148,7 @@ class Panoramic {
     for (let k in movements) {
       this._CAMERA[k] = movements[k] + this._CAMERA[k]
     }
+    this.state.needUpdate = true
   }
 
   /**
@@ -202,21 +205,25 @@ class Panoramic {
    * @private
    */
   _doRender () {
-    if (this.isStopped) return
+    if (this.state.isStopped) return
     this._RAF = window.requestAnimationFrame(this._doRender.bind(this))
-    const {renderer, scene, camera} = this._GL
-    const {radius} = this._options
-    let {verAngle, horAngle} = this._CAMERA
-    const yPos = radius * Math.sin(Panoramic._degToRad(verAngle))
+    const { renderer, scene, camera } = this._GL
+    if (this.state.needUpdate) {
+      const { radius } = this._options
+      let { verAngle, horAngle } = this._CAMERA
+      const yPos = radius * Math.sin(Panoramic._degToRad(verAngle))
 
-    const xzRadius = yPos === 0 ? radius : Math.abs(yPos * (1 / Math.tan(Panoramic._degToRad(verAngle))))
-    const xPos = xzRadius * Math.cos(Panoramic._degToRad(horAngle))
-    const zPos = xzRadius * Math.sin(Panoramic._degToRad(horAngle))
-    camera.target = new Vector3(xPos, yPos, zPos)
-    camera.position.x = 0
-    camera.position.y = 0
-    camera.position.z = 0
-    camera.lookAt(camera.target)
+      const xzRadius = yPos === 0 ? radius : Math.abs(yPos * (1 / Math.tan(Panoramic._degToRad(verAngle))))
+      const xPos = xzRadius * Math.cos(Panoramic._degToRad(horAngle))
+      const zPos = xzRadius * Math.sin(Panoramic._degToRad(horAngle))
+      camera.target = new Vector3(xPos, yPos, zPos)
+      camera.position.x = 0
+      camera.position.y = 0
+      camera.position.z = 0
+      camera.lookAt(camera.target)
+      this.state.needUpdate = false
+    }
+
     renderer.render(scene, camera)
   }
 
@@ -259,10 +266,11 @@ class Panoramic {
         this._GL.camera.aspect = this._options.width / this._options.height
         this._GL.camera.updateProjectionMatrix()
       }
+      this.state.needUpdate = true
       this.state.isFullScreen = !this.state.isFullScreen
     }
     ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(item => {
-      document.addEventListener(item, this.handleFullScreen)
+      document.addEventListener(item, this._handleFullScreen)
     })
     this.player.once('destroy', () => {
       this.destroy()

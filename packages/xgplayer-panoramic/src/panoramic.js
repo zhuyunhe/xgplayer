@@ -28,7 +28,9 @@ const getDefaultOpts = () => ({
 const getDefaultVideoOpts = () => ({
   scale: 0,
   verAngle: 0,
-  horAngle: 0
+  horAngle: 0,
+  verSpeed: 0,
+  horSpeed: 0
 })
 
 let instance = null
@@ -133,6 +135,11 @@ class Panoramic {
     this.state.isStopped = false
   }
 
+  setCameraSpeed ({ verSpeed, horSpeed }) {
+    this._CAMERA.verSpeed = verSpeed
+    this._CAMERA.horSpeed = horSpeed
+    this.state.needUpdate = true
+  }
   /**
    * move camera for 360-degree experience
    * @param movements
@@ -210,7 +217,19 @@ class Panoramic {
     const { renderer, scene, camera } = this._GL
     if (this.state.needUpdate) {
       const { radius } = this._options
+      const { verSpeed, horSpeed } = this._CAMERA
+      const absVerSpeed = Math.abs(verSpeed)
+      const absHorSpeed = Math.abs(horSpeed)
+      if (absVerSpeed > 0.1) {
+        if (Math.abs(this._CAMERA.verAngle + verSpeed) < 90) {
+          this._CAMERA.verAngle += verSpeed
+        }
+      }
+      if (absHorSpeed > 0.1) {
+        this._CAMERA.horAngle += horSpeed
+      }
       let { verAngle, horAngle } = this._CAMERA
+
       const yPos = radius * Math.sin(Panoramic._degToRad(verAngle))
 
       const xzRadius = yPos === 0 ? radius : Math.abs(yPos * (1 / Math.tan(Panoramic._degToRad(verAngle))))
@@ -221,7 +240,9 @@ class Panoramic {
       camera.position.y = 0
       camera.position.z = 0
       camera.lookAt(camera.target)
-      this.state.needUpdate = false
+      if (absHorSpeed < 0.1 && absVerSpeed < 0.1) {
+        this.state.needUpdate = false
+      }
     }
 
     renderer.render(scene, camera)

@@ -15,7 +15,6 @@ import {
   DoubleSide,
   Math as THREEMath
 } from 'three'
-
 const getDefaultOpts = () => ({
   fov: 75,
   radius: 500,

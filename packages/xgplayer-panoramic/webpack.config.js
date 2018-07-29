@@ -1,4 +1,5 @@
-const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
+// const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
+const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const polyfill = []
 const umd = {
   entry: polyfill.concat(['./src/index.js']),
@@ -34,16 +35,17 @@ const umd = {
     minimize: true
   },
   plugins: [
-    new BundleAnalyzerPlugin()
+    // new BundleAnalyzerPlugin()
   ]
 }
 
 const client = {
-  entry: polyfill.concat(['./src/index.js']),
+  entry: './src/index.js',
   output: {
     path: `${__dirname}/browser`,
     filename: 'index.js',
     library: 'Player',
+    libraryExport: 'default',
     libraryTarget: 'window'
   },
   module: {
@@ -54,7 +56,9 @@ const client = {
     }, {
       test: /\.scss$/,
       use: [
-        'style-loader',
+        {
+          loader: MiniCssExtractPlugin.loader
+        },
         {
           loader: 'css-loader',
           options: {
@@ -70,7 +74,15 @@ const client = {
   mode: 'production',
   optimization: {
     minimize: true
-  }
+  },
+  plugins: [
+    new MiniCssExtractPlugin({
+      // Options similar to the same options in webpackOptions.output
+      // both options are optional
+      filename: '[name].css',
+      chunkFilename: '[id].css'
+    })
+  ]
 }
 
 module.exports = [umd, client]

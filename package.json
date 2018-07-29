@@ -20,6 +20,7 @@
     "lerna": "^3.0.0-alpha.1",
     "lerna-changelog": "^0.8.0",
     "lint-staged": "^7.2.0",
+    "mini-css-extract-plugin": "^0.4.1",
     "nodemon": "^1.18.3",
     "style-loader": "^0.21.0",
     "webpack": "^4.12.0",

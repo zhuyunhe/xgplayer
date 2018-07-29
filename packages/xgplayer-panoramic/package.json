@@ -3,10 +3,13 @@
     "version": "1.0.5",
     "description": "video player for panoramic video",
     "main": "./dist/index.js",
-    "sideEffects": false,
+    "sideEffects": [
+        "*.css",
+        "*.scss"
+    ],
     "scripts": {
         "prepare": "npm run build",
-        "build": "webpack --progress --display-chunks --display-optimization-bailout -p",
+        "build": "webpack --progress --display-chunks -p",
         "dev": "webpack --progress --display-chunks --config webpack.config.dev.js --watch",
         "watch": "webpack --progress --display-chunks -p --watch"
     },
@@ -19,10 +22,14 @@
     ],
     "babel": {
         "presets": [
-            "es2015"
+            [
+                "es2015",
+                {
+                    "modules": false
+                }
+            ]
         ],
         "plugins": [
-            "add-module-exports",
             "babel-plugin-bulk-import"
         ]
     },
@@ -55,6 +62,7 @@
         "core-js": "^2.5.4",
         "css-loader": "^0.28.11",
         "json-loader": "^0.5.7",
+        "mini-css-extract-plugin": "^0.4.1",
         "node-sass": "^4.8.3",
         "postcss-cssnext": "^3.1.0",
         "postcss-loader": "^2.1.5",
